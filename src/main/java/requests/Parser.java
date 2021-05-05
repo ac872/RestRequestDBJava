@@ -9,6 +9,7 @@ public class Parser {
 }
 
 class Message {
+//    Fields match those on the JSON so that gson can parse them
     private long msg_id;
     private String company_name;
     private String registration_date;

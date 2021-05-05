@@ -34,23 +34,23 @@ public class Main {
             QueryRunner qr = new QueryRunner();
             qr.update(connection, "CREATE TABLE messages (" +
                     "msg_id BIGINT PRIMARY KEY, " +
-                    "company_name VARCHAR(255), " +
+                    "company_name VARCHAR(255) NOT NULL, " +
                     "registration_date DATETIME NOT NULL, " +
-                    "score FLOAT, " +
-                    "directors_count INT, " +
-                    "last_updated DATETIME);");
+                    "score FLOAT NOT NULL, " +
+                    "directors_count SMALLINT NOT NULL, " +
+                    "last_updated DATETIME NOT NULL);");
             connection.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-//        Rest request setup
+//        Rest request setup via HttpClient using mock JSON response from mocky.io
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder(
                 URI.create("https://run.mocky.io/v3/aff84616-f430-4842-9b76-eb2cf4a5eaeb")) //Mock API server
                 .build();
 
-//        Make rest request, then parse JSON, then write to DB
+//        Make rest request, JSON body to String, Parse String to ArrayList of Message's, Add each Message to DB
         client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(HttpResponse::body)
                 .thenApply(Main::parseMessages)
@@ -66,7 +66,7 @@ public class Main {
         ResultSet rs = statement.executeQuery();
         while (rs.next()) {
             System.out.println( );
-            System.out.println("Database Row Details: ");
+            System.out.println("Database Row Details:");
             System.out.println("Id: " + rs.getString("msg_id"));
             System.out.println("Company_Name: " + rs.getString("company_name"));
             System.out.println("reg_date: " + rs.getString("registration_date"));
@@ -77,13 +77,14 @@ public class Main {
         statement.close(); // Close All Connections
         rs.close();
         connection.close();
-        db.stop();
+        db.stop(); //Stop embedded database
     }
 
     private static Parser parseMessages(String data) {
         System.out.println(data); //Raw JSON data for comparison with testing above
         Gson gson = new Gson();
-        return gson.fromJson(data, Parser.class); //Parse JSON into instances of Message
+//        Parse String json into Message class, add Message to ArrayList<Message> for each message in json data
+        return gson.fromJson(data, Parser.class);
     }
 
     private static void writeToDB(ArrayList<Message> messages) {
@@ -118,6 +119,7 @@ public class Main {
     }
 
     private static String processDate(String date) {
+//        Process Dates so that format is DATETIME for use in MySQL syntax
         StringBuilder processed = new StringBuilder("'");
         for (int i = 0; i < 10; i++) {
             processed.append(date.charAt(i));
